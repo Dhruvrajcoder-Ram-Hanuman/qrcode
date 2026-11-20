@@ -8,7 +8,7 @@ from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-
+import time
 app = FastAPI(title="QR Code Generator")
 
 app.mount("/static", StaticFiles(directory='static'), name="static")
@@ -22,18 +22,19 @@ async def index(request: Request) -> HTMLResponse:
 
 @app.post("/code")#, response_class=HTMLResponse)
 async def generate_code(request: Request, data: str = Form(...)) -> HTMLResponse:
-    if('@' in data and data.endswith(".com")):
+    if('@' in data and data.endswith(".com") and not data.startswith("@")):
         print(data)
         qr = segno.make(data, error="M", micro=False, boost_error=False)
         qr.save('static/qrcode.png')
-
+        t=time.time()
+        qr.save(f'qr//{t}.png')
         return templates.TemplateResponse(
             request=request,
             name="data.html",
             context={"data": data},
         )
     else:
-        return {"message": "Hello World"}
+        return {"error": "Invalid email address"}
 
 def run() -> None:
     parser = argparse.ArgumentParser(description="Run the QR Code Generator web application.")
